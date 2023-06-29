@@ -35,6 +35,7 @@ import { ITEM_HEIGHT } from './configs';
 
 export default defineComponent({
   props: ['flavor', "id"],
+  inject: ['RACK', 'CABINET', "isThisRack", "currEnterIndex"],
   computed: {
     draggableItemStyle(): any {
       const _style = {

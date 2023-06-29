@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import Cabinet from "./RackComponents/Cabinet.vue"
 import $ from "jquery";
 import throttle from "lodash/throttle"
@@ -49,12 +49,14 @@ export default defineComponent({
   provide() {
     const vm = this;
     return {
-      RACK: vm
+      RACK: vm,
+      currEnterTitle: computed(() => vm.currEnterTitle),
+      currEnterIndex: computed(() => vm.currEnterIndex)
     }
   },
   mounted() {
     this.init()
-    initScroller(this.$refs.srollerContainer, this.$refs.srollerContent);
+    // initScroller(this.$refs.srollerContainer, this.$refs.srollerContent);
     this.handleNodeChange();
   },
   beforeUnmount() {
@@ -106,9 +108,10 @@ export default defineComponent({
 
       $container.on("dragstart", ".rack-target-item", (event: any) => {
         const index = event.currentTarget.dataset.index;
-        const unit = vm.specification[index].unit;
-        vm.currDragRack = vm.specification[index];
-
+        const title = event.currentTarget.dataset.title;
+        const { specification } = vm.$refs.treeRef.getNode(title)?.data;
+        const unit = specification[index].unit;
+        vm.currDragRack = specification[index];
         if (unit.label !== vm.currUnitDomLabel) {
           vm.currUnitDomLabel = unit.label;
         }
@@ -119,7 +122,9 @@ export default defineComponent({
         const $rackTargetItem = $target.parents(".rack-target-item");
         if ($rackTargetItem.length > 0) {
           const index = $rackTargetItem[0].dataset.index;
-          vm.specification[index].unit = this.currUnit;
+          const title = $rackTargetItem[0].dataset.title;
+          const { specification } = vm.$refs.treeRef.getNode(title)?.data;
+          specification[index].unit = this.currUnit;
           vm.currDragRack.unit = null;
         }
         event.preventDefault();
@@ -149,6 +154,7 @@ export default defineComponent({
     vm.setCurrEnterIndex = throttle(function (event: any = false) {
       if (!event) {
         vm.currEnterIndex = -1;
+        vm.currEnterTitle = ""
         return;
       }
 
@@ -157,6 +163,8 @@ export default defineComponent({
       }
 
       if (event.currentTarget.classList?.contains("rack-target-item")) {
+        vm.currEnterTitle = event.currentTarget.dataset.title;
+        console.log("vm.currEnterTitle", vm.currEnterTitle);
         if (vm.currEnterIndex != event.currentTarget.dataset.index) {
           vm.currEnterIndex = Number(event.currentTarget.dataset.index);
         }
@@ -172,6 +180,7 @@ export default defineComponent({
       currUnitDomLabel: "",
       /* 放下去 target */
       currEnterIndex: -1,
+      currEnterTitle: "",
       /*  */
       allSpecification: [],
       data: [{

@@ -3,19 +3,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { ITEM_HEIGHT } from './configs';
 
 export default defineComponent({
   props: ['cell'],
-  inject: ['RACK', 'CABINET'],
+  inject: ['RACK', 'CABINET', "isThisRack", "currEnterIndex"],
   computed: {
     styleObj() {
       const _style = {
         display: "block",
       };
-      if (~this.RACK.currEnterIndex) {
-        _style.top = `${this.RACK.currEnterIndex * ITEM_HEIGHT}px`;
+      if (this.isThisRack && ~this.currEnterIndex) {
+        _style.top = `${this.currEnterIndex * ITEM_HEIGHT}px`;
         _style.height = `${this.RACK.currUnit.span * ITEM_HEIGHT}px`;
         _style.background = `url(/imgs/racks/${this.RACK.currUnit.img}.png) center center/cover no-repeat`;
       } else {

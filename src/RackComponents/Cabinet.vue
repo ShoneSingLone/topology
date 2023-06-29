@@ -5,8 +5,8 @@
         <div class="title">{{ title }}</div>
       </div>
       <div class="cabinet-content" :style="contentStyle">
-        <CabinetDraggableMirror />
-        <CabinetDraggableItem v-for="unit in specification" :key="unit.index" :flavor="unit" />
+        <CabinetDraggableMirror :title="title" />
+        <CabinetDraggableItem v-for="unit in specification" :key="unit.index" :flavor="unit" :data-title="title" />
       </div>
     </div>
     <!--  -->
@@ -19,14 +19,17 @@ import CabinetLegs from "./CabinetLegs.vue";
 import CabinetDraggableItem from "./CabinetDraggableItem.vue";
 import CabinetDraggableMirror from "./CabinetDraggableMirror.vue";
 import { ITEM_HEIGHT } from "./configs";
+import { computed } from "vue";
 
 export default {
   components: { CabinetLegs, CabinetDraggableItem, CabinetDraggableMirror },
   props: ["configs"],
+  inject: ['RACK', "currEnterTitle"],
   provide() {
     const vm = this;
     return {
-      CABINET: vm
+      CABINET: vm,
+      isThisRack: computed(() => vm.isThisRack)
     }
   },
   data() {
@@ -35,6 +38,9 @@ export default {
   computed: {
     title() {
       return this.configs.label;
+    },
+    isThisRack() {
+      return this.title === this.currEnterTitle;
     },
     specification() {
       return this.configs.specification
