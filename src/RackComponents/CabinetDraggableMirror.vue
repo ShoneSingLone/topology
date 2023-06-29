@@ -2,6 +2,8 @@
   <div
     class="cabinet-draggable-mirror draggable-item-row_dragenter"
     :style="styleObj">
+    {{ RACK.currEnter }}
+    {{ RACK.currEnter?.index }}
   </div>
 </template>
 
@@ -25,7 +27,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 .cabinet-draggable-mirror {
   position: absolute;
-  // pointer-events: none;
+  pointer-events: none;
   width: 272px;
   color: white;
 

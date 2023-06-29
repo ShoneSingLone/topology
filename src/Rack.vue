@@ -58,11 +58,11 @@ export default defineComponent({
       event.preventDefault();
     });
     $container.on("dragenter", ".draggable-item-row", event => {
-      vm.addClass($(event.currentTarget))
+      vm.toggleCurrentEnterRow($(event.currentTarget))
     });
     $container.on("dragover", ".draggable-item-row", event => {
       event.preventDefault();
-      vm.addClass($(event.currentTarget));
+      vm.toggleCurrentEnterRow($(event.currentTarget));
     });
     $container.on("dragleave", ".draggable-item-row", event => {
       vm.removeClass()
@@ -88,12 +88,12 @@ export default defineComponent({
       this.currentNode = currentNode;
     },
     removeClass() {
-      this.currEnterRow = null
+      this.currEnter$ele = null
     },
-    addClass($ele) {
+    toggleCurrentEnterRow($ele) {
       this.removeClass();
       if ($ele.hasClass("target-rack")) {
-        this.currEnterRow = $ele;
+        this.currEnter$ele = $ele;
       }
     }
   },
@@ -110,14 +110,22 @@ export default defineComponent({
       return { span: 0 }
     },
     currEnter() {
-      if (vm.currEnterRow) {
-
+      if (this.currEnter$ele) {
+        const index = this.currEnter$ele.attr("data-index");
+        return {
+          index
+        }
+      } else {
+        return {}
       }
     }
   },
   data() {
     return {
+      /* drag source*/
       currUnit: null,
+      /* drop target */
+      currEnter$ele: null,
       defaultProps: {
         children: 'children',
         label: 'label',

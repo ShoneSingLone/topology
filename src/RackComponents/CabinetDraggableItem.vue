@@ -1,5 +1,5 @@
 <template>
-  <div class="cell flex middle target-rack draggable-item-row" draggable="true">
+  <div class="cell flex middle target-rack draggable-item-row" draggable="true" :data-index="cell.index">
     <div class="cell-item index">
       <div>{{ cell.index + 1 }}</div>
     </div>
@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   props: ['cell']
