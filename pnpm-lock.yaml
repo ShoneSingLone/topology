@@ -5,6 +5,7 @@ specifiers:
   '@vitejs/plugin-vue': ^4.1.0
   element-plus: ^2.3.7
   jquery: ^3.7.0
+  lodash: ^4.17.21
   sass: ^1.63.6
   typescript: ^5.0.2
   vite: ^4.3.9
@@ -15,6 +16,7 @@ dependencies:
   '@shopify/draggable': registry.npmmirror.com/@shopify/draggable/1.0.0-beta.8
   element-plus: registry.npmmirror.com/element-plus/2.3.7_vue@3.3.4
   jquery: registry.npmmirror.com/jquery/3.7.0
+  lodash: registry.npmmirror.com/lodash/4.17.21
   sass: registry.npmmirror.com/sass/1.63.6
   vue: registry.npmmirror.com/vue/3.3.4
 

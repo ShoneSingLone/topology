@@ -1,5 +1,5 @@
 <template>
-  <section class="el-container flex" ref="container_draggable">
+  <section class="el-container flex" ref="container_draggable" :style="rackStyle">
     <aside class="el-aside el-card">
       <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick" />
     </aside>
@@ -10,7 +10,7 @@
           :key="sub.label"
           :data-label="sub.label"
           :draggable="true"
-          class="el-tree-node draggable-item-row">
+          class="el-tree-node rack-source-unit">
           <div class="el-tree-node__content">
             <span class="el-tree-node__label">{{ sub.label }}</span>
           </div>
@@ -19,10 +19,10 @@
     </aside>
     <main class="el-main flex middle flex1 center">
       <div style="position:absolute;top:10px">
-        <div class="item">{{ unitInfo }}</div>
-        <div class="item">{{ unitInfo?.span }}</div>
+        <div class="item">{{ currUnit }}</div>
+        <div class="item">{{ currUnit?.span }}</div>
       </div>
-      <Cabinet :title="currentNode.label" />
+      <Cabinet :title="currentNode.label" :flavor="flavor" />
     </main>
   </section>
 </template>
@@ -31,6 +31,8 @@
 import { defineComponent } from "vue";
 import Cabinet from "./RackComponents/Cabinet.vue"
 import $ from "jquery";
+import throttle from "lodash/throttle"
+import { CABINET_WIDTH } from "./RackComponents/configs";
 
 export default defineComponent({
   provide() {
@@ -44,38 +46,36 @@ export default defineComponent({
     const $container = $(this.$refs.container_draggable);
     this.$container = $container;
 
-    $container.on("dragstart", ".draggable-item-row", event => {
-      if ($(event.currentTarget).hasClass("target-rack")) {
-        event.preventDefault();
-      } else {
-        vm.currUnit = event.currentTarget;
+    $container.on("dragstart", ".rack-source-unit", (event: any) => {
+      const currUnitDomLabel = event.currentTarget.dataset.label;
+      if (currUnitDomLabel !== vm.currUnitDomLabel) {
+        vm.currUnitDomLabel = currUnitDomLabel;
       }
     });
-    $container.on("dragend", ".draggable-item-row", event => {
-      vm.currUnit = null;
-    });
-    $container.on("dragstart", ".target-rack", event => {
+    $container.on("dragend", (event: any) => {
       event.preventDefault();
+      vm.currUnitDomLabel = "";
     });
-    $container.on("dragenter", ".draggable-item-row", event => {
-      vm.toggleCurrentEnterRow($(event.currentTarget))
-    });
-    $container.on("dragover", ".draggable-item-row", event => {
+    $container.on("dragenter", ".cabinet-content .rack-target-item", (event: any) => {
       event.preventDefault();
-      vm.toggleCurrentEnterRow($(event.currentTarget));
+      vm.setCurrEnterIndex(event)
     });
-    $container.on("dragleave", ".draggable-item-row", event => {
-      vm.removeClass()
-    });
-    $container.on("drop", event => {
+    $container.on("dragover", ".cabinet-content .rack-target-item", (event: any) => {
       event.preventDefault();
-      vm.removeClass()
+      vm.setCurrEnterIndex(event);
+    });
+    $container.on("dragleave", ".cabinet-content", (event: any) => {
+      event.preventDefault();
+      vm.setCurrEnterIndex()
+    });
+    $container.on("drop", (event: any) => {
+      event.preventDefault();
+      vm.setCurrEnterIndex()
     });
   },
   beforeUnmount() {
     this.$container.off("dragstart");
     this.$container.off("dragend");
-    this.$container.off("dragstart");
     this.$container.off("dragenter");
     this.$container.off("dragleave");
     this.$container.off("dragover");
@@ -87,45 +87,51 @@ export default defineComponent({
     handleNodeClick(currentNode: any) {
       this.currentNode = currentNode;
     },
-    removeClass() {
-      this.currEnter$ele = null
-    },
-    toggleCurrentEnterRow($ele) {
-      this.removeClass();
-      if ($ele.hasClass("target-rack")) {
-        this.currEnter$ele = $ele;
-      }
-    }
   },
   computed: {
+    rackStyle() {
+      return {
+        "--cabinet-draggable-mirror-width": `${CABINET_WIDTH}px`,
+      }
+    },
     /* drag 的unit信息，根据某个能确定唯一性的属性从array中获取 */
-    unitInfo() {
-      const vm = this;
-      if (vm.currUnit) {
-        const $dragged = $(vm.currUnit);
-        const label = $dragged.attr("data-label");
-        const info = vm.unitOptions.find(i => i.label === label)
-        return info
+    currUnit(): any {
+      if (this.currUnitDomLabel) {
+        const unit = this.unitOptions.find(i => i.label === this.currUnitDomLabel)
+        if (unit) {
+          return unit
+        }
       }
       return { span: 0 }
     },
-    currEnter() {
-      if (this.currEnter$ele) {
-        const index = this.currEnter$ele.attr("data-index");
-        return {
-          index
-        }
-      } else {
-        return {}
-      }
-    }
   },
   data() {
+    const vm = this;
+    vm.setCurrEnterIndex = throttle(function (event: any = false) {
+      if (!event) {
+        vm.currEnterIndex = -1;
+        return;
+      }
+
+      if (event.stopPropagation) {
+        event.stopPropagation();
+      }
+
+      if (event.currentTarget.classList?.contains("rack-target-item")) {
+        if (vm.currEnterIndex != event.currentTarget.dataset.index) {
+          vm.currEnterIndex = Number(event.currentTarget.dataset.index);
+        }
+      }
+    }, 200)
     return {
-      /* drag source*/
-      currUnit: null,
-      /* drop target */
-      currEnter$ele: null,
+      flavor: {
+        total: 20
+      },
+      /* 抓起来 source*/
+      currUnitDomLabel: "",
+      /* 放下去 target */
+      currEnterIndex: -1,
+      /*  */
       defaultProps: {
         children: 'children',
         label: 'label',
@@ -133,9 +139,9 @@ export default defineComponent({
       currentNode: { label: 'Level one 1', },
       data: [{ label: 'Level one 1', }, { label: 'Level one 2', }],
       unitOptions: [
-        { label: 'span 1', span: 1 },
-        { label: 'span 2', span: 2 },
-        { label: 'span 3', span: 3 }
+        { label: 'span 1', span: 1, img: "2" },
+        { label: 'span 2', span: 2, img: "2" },
+        { label: 'span 3', span: 3, img: "3" }
       ],
     }
   },

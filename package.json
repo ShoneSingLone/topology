@@ -12,6 +12,7 @@
     "@shopify/draggable": "1.0.0-beta.8",
     "element-plus": "^2.3.7",
     "jquery": "^3.7.0",
+    "lodash": "^4.17.21",
     "sass": "^1.63.6",
     "vue": "^3.2.47"
   },

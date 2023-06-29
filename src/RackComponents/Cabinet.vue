@@ -1,18 +1,15 @@
 <template>
-  <div class="wrapper flex vertical">
-    <div class="body-wrapper">
-      <div class="title-wrapper flex middle">
-        <div class="gap"></div>
-        <div class="title flex1">{{ title }}</div>
-        <div class="gap"></div>
+  <div class="cabinet-wrapper flex vertical">
+    <div class="cabinet-body-wrapper flex vertical">
+      <div class="title-wrapper flex middle center">
+        <div class="title">{{ title }}</div>
       </div>
-      <div class="body">
-        <div class="content flex1">
-          <CabinetDraggableMirror />
-          <CabinetDraggableItem v-for="cell in cellArray" :key="cell.index" :cell="cell" />
-        </div>
+      <div class="cabinet-content" :style="contentStyle">
+        <CabinetDraggableMirror />
+        <CabinetDraggableItem v-for="cell in cellArray" :key="cell.index" :cell="cell" />
       </div>
     </div>
+    <!--  -->
     <CabinetLegs />
   </div>
 </template>
@@ -21,14 +18,28 @@
 import CabinetLegs from "./CabinetLegs.vue";
 import CabinetDraggableItem from "./CabinetDraggableItem.vue";
 import CabinetDraggableMirror from "./CabinetDraggableMirror.vue";
+import { ITEM_HEIGHT } from "./configs";
 
 export default {
   components: { CabinetLegs, CabinetDraggableItem, CabinetDraggableMirror },
-  props: ["title"],
-  data() {
+  props: ["title", "flavor"],
+  provide() {
+    const vm = this;
     return {
-      cellArray: [...new Array(20)].map((i, ii) => ({ index: ii }))
+      CABINET: vm
+    }
+  },
+  data() {
+    const vm = this;
+    const cellArray = [...new Array(vm.flavor.total)].map((i, ii) => ({ index: ii }));
+    return {
+      cellArray
     };
+  },
+  computed: {
+    contentStyle() {
+      return { height: `${this.flavor.total * (ITEM_HEIGHT)}px` }
+    }
   },
   methods: {},
   mounted() {
@@ -42,12 +53,12 @@ export default {
   /* outline: 1px solid #f3f3f3; */
 }
 
-.wrapper {
+.cabinet-wrapper {
   width: 300px;
   min-height: 500px;
 }
 
-.body-wrapper {
+.cabinet-body-wrapper {
   padding: 10px;
   border: 2px solid white;
   border-radius: 4px;
@@ -59,19 +70,12 @@ export default {
   color: white;
 }
 
-.body {
+.cabinet-content {
   border: 2px solid #323540;
+  /* 减去border  4px */
+  width: var(--cabinet-draggable-mirror-width);
   background: #323540;
-}
-
-
-.content {
-  width: 100%;
-}
-
-
-.gap {
-  width: 10px;
-  height: 10px;
+  position: relative;
+  overflow: hidden;
 }
 </style>
