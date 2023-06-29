@@ -6,7 +6,7 @@
       </div>
       <div class="cabinet-content" :style="contentStyle">
         <CabinetDraggableMirror />
-        <CabinetDraggableItem v-for="cell in cellArray" :key="cell.index" :cell="cell" />
+        <CabinetDraggableItem v-for="unit in specification" :key="unit.index" :flavor="unit" />
       </div>
     </div>
     <!--  -->
@@ -22,7 +22,7 @@ import { ITEM_HEIGHT } from "./configs";
 
 export default {
   components: { CabinetLegs, CabinetDraggableItem, CabinetDraggableMirror },
-  props: ["title", "flavor"],
+  props: ["configs"],
   provide() {
     const vm = this;
     return {
@@ -30,15 +30,17 @@ export default {
     }
   },
   data() {
-    const vm = this;
-    const cellArray = [...new Array(vm.flavor.total)].map((i, ii) => ({ index: ii }));
-    return {
-      cellArray
-    };
+    return {};
   },
   computed: {
+    title() {
+      return this.configs.label;
+    },
+    specification() {
+      return this.configs.specification
+    },
     contentStyle() {
-      return { height: `${this.flavor.total * (ITEM_HEIGHT)}px` }
+      return { height: `${this.specification.length * (ITEM_HEIGHT)}px` }
     }
   },
   methods: {},
@@ -55,7 +57,6 @@ export default {
 
 .cabinet-wrapper {
   width: 300px;
-  min-height: 500px;
 }
 
 .cabinet-body-wrapper {

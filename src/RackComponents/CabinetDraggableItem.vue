@@ -1,11 +1,29 @@
 <template>
-  <div class="cabinet-draggable-item rack-target-item flex middle" :data-index="cell.index"
+  <div class="cabinet-draggable-item rack-target-item flex middle"
+    :data-index="flavor.index"
     :style="draggableItemStyle">
-    <div class="cell-item-wrapper flex middle">
-      <div class="cell-item index">
-        <div>{{ cell.index + 1 }}</div>
+    <div class="flavor-item-wrapper flex middle">
+      <el-popover
+        v-if="flavor.unit"
+        placement="left"
+        :title="flavor.unit.label"
+        :width="200"
+        trigger="hover"
+        :content="flavor.unit.span">
+        <template #reference>
+          <div class="flavor-item index">
+            <div>{{ flavor.index + 1 }}</div>
+          </div>
+        </template>
+      </el-popover>
+      <div class="flavor-item index" v-else>
+        <div>{{ flavor.index + 1 }}</div>
       </div>
-      <div class="cell-item content-item flex1" :style="contentStyle">
+
+      <div class="flavor-item content-item flex1"
+        :style="contentStyle"
+        draggable="true"
+        :data-index="flavor.index">
       </div>
     </div>
   </div>
@@ -16,25 +34,38 @@ import { defineComponent } from 'vue';
 import { ITEM_HEIGHT } from './configs';
 
 export default defineComponent({
-  props: ['cell'],
+  props: ['flavor', "id"],
   computed: {
     draggableItemStyle(): any {
-      return {
-        top: `${this.cell.index * (ITEM_HEIGHT)}px`,
+      const _style = {
+        top: `${this.flavor.index * (ITEM_HEIGHT)}px`,
         height: `${ITEM_HEIGHT}px`
       }
+      if (this.flavor?.unit) {
+        const span = Number(this.flavor?.unit?.span) || 1;
+        if (span > 1) {
+          _style["z-index"] = 2;
+        }
+      }
+      return _style
     },
     contentStyle() {
-      return {
-
+      const _style = {};
+      if (this.flavor?.unit) {
+        _style.background = `url(/imgs/racks/${this.flavor.unit.img}.png) center center/cover no-repeat`;
+        const span = Number(this.flavor?.unit?.span) || 1;
+        if (span > 1) {
+          _style.height = `${ITEM_HEIGHT * span}px`;
+        }
       }
+      return _style
     },
   }
 });
 </script>
 
 <style scoped lang="scss">
-.cell-item {
+.flavor-item {
   // height: 24px;
 }
 
@@ -45,7 +76,8 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.cell-item-wrapper {
+.flavor-item-wrapper {
+  position: relative;
   // background-color: greenyellow;
   width: 100%;
 }
@@ -69,5 +101,10 @@ export default defineComponent({
 .content-item {
   border-radius: 0 5px 5px 0;
   background-color: #51515159;
+  position: absolute;
+  top: 0;
+  left: 24px;
+  width: 254px;
+  z-index: 1;
 }
 </style>

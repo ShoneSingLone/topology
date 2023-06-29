@@ -1,7 +1,16 @@
 <template>
   <section class="el-container flex" ref="container_draggable" :style="rackStyle">
     <aside class="el-aside el-card">
-      <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick" />
+      <el-tree
+        ref="treeRef"
+        :data="data"
+        :props="defaultProps"
+        default-expand-all
+        :default-checked-keys="defaultCheckedKeys"
+        @check="handleNodeChange"
+        show-checkbox
+        node-key="label"
+        highlight-current />
     </aside>
     <aside class="el-aside el-card">
       <el-select></el-select>
@@ -17,12 +26,13 @@
         </div>
       </div>
     </aside>
-    <main class="el-main flex middle flex1 center">
-      <div style="position:absolute;top:10px">
-        <div class="item">{{ currUnit }}</div>
-        <div class="item">{{ currUnit?.span }}</div>
+    <main class="el-main el-card " id="sroller-container" ref="srollerContainer">
+      <div id="sroller-content" ref="srollerContent" class="sroller-content">
+        <div class="cabinet-wrapper flex vertical" v-for="spe in allSpecification" :key="spe.label">
+          <div class="flex1"></div>
+          <Cabinet :configs="spe" />
+        </div>
       </div>
-      <Cabinet :title="currentNode.label" :flavor="flavor" />
     </main>
   </section>
 </template>
@@ -33,6 +43,7 @@ import Cabinet from "./RackComponents/Cabinet.vue"
 import $ from "jquery";
 import throttle from "lodash/throttle"
 import { CABINET_WIDTH } from "./RackComponents/configs";
+import { initScroller } from "./RackComponents/scroller/initScroller";
 
 export default defineComponent({
   provide() {
@@ -42,36 +53,9 @@ export default defineComponent({
     }
   },
   mounted() {
-    const vm = this;
-    const $container = $(this.$refs.container_draggable);
-    this.$container = $container;
-
-    $container.on("dragstart", ".rack-source-unit", (event: any) => {
-      const currUnitDomLabel = event.currentTarget.dataset.label;
-      if (currUnitDomLabel !== vm.currUnitDomLabel) {
-        vm.currUnitDomLabel = currUnitDomLabel;
-      }
-    });
-    $container.on("dragend", (event: any) => {
-      event.preventDefault();
-      vm.currUnitDomLabel = "";
-    });
-    $container.on("dragenter", ".cabinet-content .rack-target-item", (event: any) => {
-      event.preventDefault();
-      vm.setCurrEnterIndex(event)
-    });
-    $container.on("dragover", ".cabinet-content .rack-target-item", (event: any) => {
-      event.preventDefault();
-      vm.setCurrEnterIndex(event);
-    });
-    $container.on("dragleave", ".cabinet-content", (event: any) => {
-      event.preventDefault();
-      vm.setCurrEnterIndex()
-    });
-    $container.on("drop", (event: any) => {
-      event.preventDefault();
-      vm.setCurrEnterIndex()
-    });
+    this.init()
+    initScroller(this.$refs.srollerContainer, this.$refs.srollerContent);
+    this.handleNodeChange();
   },
   beforeUnmount() {
     this.$container.off("dragstart");
@@ -84,8 +68,63 @@ export default defineComponent({
   },
   components: { Cabinet },
   methods: {
-    handleNodeClick(currentNode: any) {
-      this.currentNode = currentNode;
+    handleNodeChange() {
+      const nodes = this.$refs.treeRef.getCheckedNodes(false, false);
+      this.allSpecification = nodes.filter(i => i.label != "全部");
+    },
+    getCheckedNodes() {
+      return this.$refs.treeRef.getCheckedNodes(false, false)
+    },
+    init() {
+      const nodes = this.getCheckedNodes();
+      const vm = this;
+      const $container = $(this.$refs.container_draggable);
+      this.$container = $container;
+
+      $container.on("dragstart", ".rack-source-unit", (event: any) => {
+        const currUnitDomLabel = event.currentTarget.dataset.label;
+        if (currUnitDomLabel !== vm.currUnitDomLabel) {
+          vm.currUnitDomLabel = currUnitDomLabel;
+        }
+      });
+      $container.on("dragend", (event: any) => {
+        event.preventDefault();
+        vm.currUnitDomLabel = "";
+      });
+      $container.on("dragenter", ".cabinet-content .rack-target-item", (event: any) => {
+        event.preventDefault();
+        vm.setCurrEnterIndex(event)
+      });
+      $container.on("dragover", ".cabinet-content .rack-target-item", (event: any) => {
+        event.preventDefault();
+        vm.setCurrEnterIndex(event);
+      });
+      $container.on("dragleave", ".cabinet-content", (event: any) => {
+        event.preventDefault();
+        vm.setCurrEnterIndex()
+      });
+
+      $container.on("dragstart", ".rack-target-item", (event: any) => {
+        const index = event.currentTarget.dataset.index;
+        const unit = vm.specification[index].unit;
+        vm.currDragRack = vm.specification[index];
+
+        if (unit.label !== vm.currUnitDomLabel) {
+          vm.currUnitDomLabel = unit.label;
+        }
+      });
+
+      $container.on("drop", (event: any) => {
+        const $target = $(event.target)
+        const $rackTargetItem = $target.parents(".rack-target-item");
+        if ($rackTargetItem.length > 0) {
+          const index = $rackTargetItem[0].dataset.index;
+          vm.specification[index].unit = this.currUnit;
+          vm.currDragRack.unit = null;
+        }
+        event.preventDefault();
+        vm.setCurrEnterIndex()
+      });
     },
   },
   computed: {
@@ -124,20 +163,24 @@ export default defineComponent({
       }
     }, 200)
     return {
-      flavor: {
-        total: 20
+      defaultCheckedKeys: ["one"],
+      defaultProps: {
+        children: 'children',
+        label: 'label',
       },
       /* 抓起来 source*/
       currUnitDomLabel: "",
       /* 放下去 target */
       currEnterIndex: -1,
       /*  */
-      defaultProps: {
-        children: 'children',
-        label: 'label',
-      },
-      currentNode: { label: 'Level one 1', },
-      data: [{ label: 'Level one 1', }, { label: 'Level one 2', }],
+      allSpecification: [],
+      data: [{
+        label: '全部',
+        children: [
+          { label: 'one', specification: [...new Array(20)].map((i, ii) => ({ index: ii, unit: null })) },
+          { label: 'Level', specification: [...new Array(10)].map((i, ii) => ({ index: ii, unit: null })) }
+        ]
+      }],
       unitOptions: [
         { label: 'span 1', span: 1, img: "2" },
         { label: 'span 2', span: 2, img: "2" },
@@ -168,6 +211,15 @@ export default defineComponent({
 
 .el-main {
   width: 100%;
+  overflow: hidden;
+}
+
+.sroller-content {
+  // float: left;
+  display: flex;
+
+  .cabinet-wrapper {
+    // height: 100%;
+  }
 }
 </style>
-./RackComponents/Cabinet.vue
